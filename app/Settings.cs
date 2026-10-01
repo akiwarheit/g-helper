@@ -1213,7 +1213,37 @@ namespace GHelper
 
         private void ButtonKeyboardColor_Click(object? sender, EventArgs e)
         {
+            if (Aura.Mode == AuraMode.CustomKeys)
+            {
+                using var editor = new KeyCustom();
+                editor.ShowDialog(this);
+                VisualiseAura();
+                return;
+            }
+
             SetColorPicker("aura_color", Aura.Color1);
+        }
+
+        private void SliderKeyboardBrightness_ValueChanged(object? sender, EventArgs e)
+        {
+            bool onBattery = SystemInformation.PowerStatus.PowerLineStatus != PowerLineStatus.Online;
+
+            if (onBattery)
+                AppConfig.Set("keyboard_brightness_ac", sliderKeyboardBrightness.Value);
+            else
+                AppConfig.Set("keyboard_brightness", sliderKeyboardBrightness.Value);
+
+            Aura.ApplyBrightness(sliderKeyboardBrightness.Value, "Slider");
+            sliderKeyboardBrightness.AccessibleName = Properties.Strings.LaptopBacklight + ": " + sliderKeyboardBrightness.Value;
+        }
+
+        public void VisualiseKbBrightness(int backlight)
+        {
+            if (InvokeRequired) { Invoke(() => VisualiseKbBrightness(backlight)); return; }
+            sliderKeyboardBrightness.ValueChanged -= SliderKeyboardBrightness_ValueChanged;
+            sliderKeyboardBrightness.Value = backlight;
+            sliderKeyboardBrightness.AccessibleName = Properties.Strings.LaptopBacklight + ": " + sliderKeyboardBrightness.Value;
+            sliderKeyboardBrightness.ValueChanged += SliderKeyboardBrightness_ValueChanged;
         }
 
         private void ButtonRearColor_Click(object? sender, EventArgs e)
@@ -1271,6 +1301,12 @@ namespace GHelper
                 buttonKeyboardColor.Visible = false;
             }
 
+            Logger.WriteLine("Per-key RGB available: " + Aura.IsPerKeyRGB);
+
+            sliderKeyboardBrightness.Value = InputDispatcher.GetBacklight();
+            sliderKeyboardBrightness.AccessibleName = Properties.Strings.LaptopBacklight + ": " + sliderKeyboardBrightness.Value;
+            sliderKeyboardBrightness.ValueChanged += SliderKeyboardBrightness_ValueChanged;
+
             if (AppConfig.NoAura())
             {
                 comboKeyboard.Visible = false;
@@ -1290,10 +1326,29 @@ namespace GHelper
             });
         }
 
+        // Switch the keyboard mode combo (persists the mode and re-applies aura)
+        public void SelectAuraMode(AuraMode mode)
+        {
+            if ((AuraMode)comboKeyboard.SelectedValue != mode)
+                comboKeyboard.SelectedValue = mode;
+            else
+                SetAura();
+        }
+
         private void _VisualiseAura()
         {
-            buttonKeyboardColor.SwatchColor = Aura.Color1;
-            buttonKeyboardColor.SwatchColor2 = Aura.HasSecondColor() ? Aura.Color2 : (Color?)null;
+            if (Aura.Mode == AuraMode.CustomKeys)
+            {
+                buttonKeyboardColor.Text = Properties.Strings.KeyCustomMapping;
+                buttonKeyboardColor.SwatchColor = null;
+                buttonKeyboardColor.SwatchColor2 = null;
+            }
+            else
+            {
+                buttonKeyboardColor.Text = Properties.Strings.Color;
+                buttonKeyboardColor.SwatchColor = Aura.Color1;
+                buttonKeyboardColor.SwatchColor2 = Aura.HasSecondColor() ? Aura.Color2 : (Color?)null;
+            }
 
             if (panelRearLight.Visible) buttonRearColor.SwatchColor = Aura.RearColor;
 

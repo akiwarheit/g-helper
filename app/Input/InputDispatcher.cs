@@ -1170,6 +1170,8 @@ namespace GHelper.Input
             var extraForm = Program.settingsForm.extraForm;
             if (extraForm != null && extraForm.Text != "") extraForm.VisualiseBacklight(backlight);
 
+            Program.settingsForm?.VisualiseKbBrightness(backlight);
+
             if (force || !AsusService.IsAsusOptimizationRunning())
             {
                 Aura.ApplyBrightness(backlight, "HotKey");

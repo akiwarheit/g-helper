@@ -198,6 +198,9 @@
   <data name="AuraComet" xml:space="preserve">
     <value>Comet</value>
   </data>
+  <data name="AuraCustomKeys" xml:space="preserve">
+    <value>Custom Keys</value>
+  </data>
   <data name="AuraCounterClockwise" xml:space="preserve">
     <value>Counterclockwise</value>
   </data>
@@ -517,6 +520,30 @@ Do you still want to continue?</value>
   </data>
   <data name="KeyBindings" xml:space="preserve">
     <value>Key Bindings</value>
+  </data>
+  <data name="KeyCustomApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="KeyCustomFillAll" xml:space="preserve">
+    <value>Fill All</value>
+  </data>
+  <data name="KeyCustomFillRow" xml:space="preserve">
+    <value>Fill Row</value>
+  </data>
+  <data name="KeyCustomGradient" xml:space="preserve">
+    <value>Gradient</value>
+  </data>
+  <data name="KeyCustomMapping" xml:space="preserve">
+    <value>Color Mapping</value>
+  </data>
+  <data name="KeyCustomReset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="KeyCustomTitle" xml:space="preserve">
+    <value>Custom Key Colors</value>
+  </data>
+  <data name="KeyCustomTest" xml:space="preserve">
+    <value>Test Mapping</value>
   </data>
   <data name="Keyboard" xml:space="preserve">
     <value>Keyboard</value>

@@ -58,6 +58,7 @@ namespace GHelper.USB
         ZONETEST = 25,
         AUDIO = 26,
         AUDIOPULSE = 27,
+        CustomKeys = 30,
     }
 
     public enum AuraSpeed : int
@@ -106,6 +107,11 @@ namespace GHelper.USB
 
         static bool isStrix => BacklightType == AuraBacklightType.MultiZone || BacklightType == AuraBacklightType.PerKey;
         public static bool IsBacklightDetected => BacklightType != AuraBacklightType.Unknown;
+
+        // True when the keyboard can take a per-key RGB frame (0xBC feature report).
+        // Strix/Scar full-size layouts; 4-zone and ACPI (TUF/VivoZenPro) boards can't.
+        public static bool IsPerKeyRGB => !isACPI && !isStrix4Zone && !AsusLampArray.Available
+            && (isStrix || BacklightType == AuraBacklightType.PerKey || AppConfig.IsStrix());
 
         static bool isStrix4Zone = false;
         static bool isStrixNumpad = AppConfig.IsStrixNumpad();
@@ -190,6 +196,11 @@ namespace GHelper.USB
             {
                 modes[AuraMode.Comet] = "Comet";
                 modes[AuraMode.Flash] = "Flash";
+            }
+
+            if (IsPerKeyRGB)
+            {
+                modes[AuraMode.CustomKeys] = Properties.Strings.AuraCustomKeys;
             }
 
             if (isAlly)
@@ -739,6 +750,70 @@ namespace GHelper.USB
             AsusHid.SetFeatureAura(buffer);
         }
 
+        // Per-key frame: one color per packetMap slot (key, lightbar, logo, lid).
+        // Same 0xBC protocol as ApplyDirect, but slot colors are used directly instead of the zone lookup.
+        public static void ApplyDirectKeys(Color[] perKey, bool init = false)
+        {
+            if (!backlight || isStrix4Zone || AsusLampArray.Available) return;
+
+            const byte keySet = 167;
+            const byte ledCount = 178;
+            const ushort mapSize = 3 * ledCount;
+            const byte ledsPerPacket = 16;
+
+            byte[] buffer = new byte[64];
+            byte[] keyBuf = new byte[mapSize];
+
+            buffer[0] = AsusHid.AURA_ID;
+            buffer[1] = 0xBC;
+            buffer[2] = 0;
+            buffer[3] = 1;
+            buffer[4] = 1;
+            buffer[5] = 1;
+            buffer[6] = 0;
+            buffer[7] = 0x10;
+
+            if (init || initDirect)
+            {
+                initDirect = false;
+                AsusHid.SetFeatureAura(new byte[] { AsusHid.AURA_ID, 0xBC, (byte)(IsOldStrix ? 0 : 1) });
+                Thread.Sleep(50);
+            }
+
+            Array.Clear(keyBuf, 0, keyBuf.Length);
+
+            for (int ledIndex = 0; ledIndex < packetMap.Count(); ledIndex++)
+            {
+                ushort offset = (ushort)(3 * packetMap[ledIndex]);
+
+                keyBuf[offset] = perKey[ledIndex].R;
+                keyBuf[offset + 1] = perKey[ledIndex].G;
+                keyBuf[offset + 2] = perKey[ledIndex].B;
+            }
+
+            for (int i = 0; i < keySet; i += ledsPerPacket)
+            {
+                byte ledsRemaining = (byte)(keySet - i);
+
+                if (ledsRemaining < ledsPerPacket)
+                {
+                    buffer[7] = ledsRemaining;
+                }
+
+                buffer[6] = (byte)i;
+                Buffer.BlockCopy(keyBuf, 3 * i, buffer, 9, 3 * buffer[7]);
+                AsusHid.SetFeatureAura(buffer);
+                Thread.Sleep(1);
+            }
+
+            buffer[4] = 0x04;
+            buffer[5] = 0x00;
+            buffer[6] = 0x00;
+            buffer[7] = 0x00;
+            Buffer.BlockCopy(keyBuf, 3 * keySet, buffer, 9, 3 * (ledCount - keySet));
+            AsusHid.SetFeatureAura(buffer);
+        }
+
         public static void ApplyDirectLightbar(Color[] color)
         {
             if (AsusLampArray.Available) return;
@@ -901,6 +976,12 @@ namespace GHelper.USB
             if (Mode == AuraMode.ZONETEST)
             {
                 CustomRGB.ApplyZoneTest();
+                return;
+            }
+
+            if (Mode == AuraMode.CustomKeys)
+            {
+                CustomKeys.Apply();
                 return;
             }
 
@@ -1092,7 +1173,7 @@ namespace GHelper.USB
             static Color colorStandard = ColorTranslator.FromHtml(AppConfig.GetString("color_standard", "#FFFF00"));
             static Color colorEco = ColorTranslator.FromHtml(AppConfig.GetString("color_eco", "#008000"));
 
-            public static void ApplyGradient()
+        public static void ApplyGradient()
             {
                 if (!isStrix && !isStrix4Zone)
                 {
@@ -1386,6 +1467,114 @@ namespace GHelper.USB
             }
 
         }
+
+        // User-defined per-key colors (Armoury "device mode" equivalent).
+        // Slot index matches packetMap order in Aura; a drawn key may cover several slots.
+        public static class CustomKeys
+        {
+            static readonly int keyCount = packetMap.Count();
+
+            public static Color[] Keys = new Color[packetMap.Count()];
+
+            // Slots the editor does not draw (lightbar, logo, lid, status key):
+            // they always light up with the main keyboard color (Color1).
+            public static int[] StaticSlots;
+
+            static bool IsStaticSlot(int slot)
+            {
+                return StaticSlots != null && Array.IndexOf(StaticSlots, slot) >= 0;
+            }
+
+            // Frame actually sent to the hardware: user colors + Color1 for static slots
+            static Color[] BuildFrame()
+            {
+                var frame = new Color[keyCount];
+                for (int i = 0; i < keyCount; i++)
+                    frame[i] = IsStaticSlot(i) ? Color1 : Keys[i];
+                return frame;
+            }
+
+            static CustomKeys()
+            {
+                Load();
+            }
+
+            public static void Load()
+            {
+                string s = AppConfig.GetString("custom_key_colors");
+
+                if (s is null)
+                {
+                    for (int i = 0; i < keyCount; i++) Keys[i] = Color.Black;
+                    return;
+                }
+
+                string[] arr = s.Split('-');
+                for (int i = 0; i < keyCount; i++)
+                {
+                    Keys[i] = i < arr.Length && arr[i].Length == 6
+                        ? ColorTranslator.FromHtml("#" + arr[i])
+                        : Color.Black;
+                }
+            }
+
+            public static void Save()
+            {
+                AppConfig.Set("custom_key_colors",
+                    string.Join("-", Keys.Select(c => c.R.ToString("X2") + c.G.ToString("X2") + c.B.ToString("X2"))));
+            }
+
+            public static void Fill(Color color)
+            {
+                for (int i = 0; i < keyCount; i++) Keys[i] = color;
+                Save();
+            }
+
+            public static void Reset()
+            {
+                Fill(Color.Black);
+            }
+
+            public static void FillGradient(Color from, Color to)
+            {
+                for (int i = 0; i < keyCount; i++)
+                    Keys[i] = ColorUtils.GetWeightedAverage(to, from, i / (float)(keyCount - 1));
+                Save();
+            }
+
+            public static void Apply(bool init = false)
+            {
+                Load();
+                ApplyDirectKeys(BuildFrame(), init);
+            }
+
+            // Live preview from the editor (no persistence)
+            public static void Preview()
+            {
+                ApplyDirectKeys(BuildFrame());
+            }
+
+            // Test pattern: one hue per slot, left to right. Used to verify the physical
+            // LED mapping on a real board before trusting user-defined colors. Not saved.
+            public static void ApplyTestPattern()
+            {
+                var test = new Color[keyCount];
+                for (int i = 0; i < keyCount; i++)
+                {
+                    if (IsStaticSlot(i))
+                    {
+                        test[i] = Color1;
+                        continue;
+                    }
+
+                    var hsv = new ColorUtils.HSV { Hue = i / (float)keyCount, Saturation = 1.0, Value = 1.0 };
+                    test[i] = hsv.ToRGB();
+                }
+
+                ApplyDirectKeys(test);
+            }
+        }
+
 
     }
 
