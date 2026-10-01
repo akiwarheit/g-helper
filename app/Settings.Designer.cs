@@ -1210,6 +1210,7 @@ namespace GHelper
             panelKeyboard.AutoSize = true;
             panelKeyboard.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             panelKeyboard.Controls.Add(labelBacklight);
+            panelKeyboard.Controls.Add(sliderKeyboardBrightness);
             panelKeyboard.Controls.Add(tableLayoutKeyboard);
             panelKeyboard.Controls.Add(panelKeyboardTitle);
             panelKeyboard.Dock = DockStyle.Top;
@@ -1254,7 +1255,19 @@ namespace GHelper
             tableLayoutKeyboard.Size = new Size(787, 52);
             tableLayoutKeyboard.TabIndex = 39;
             // 
-            // buttonKeyboard
+            // sliderKeyboardBrightness
+            // 
+            sliderKeyboardBrightness = new Slider();
+            sliderKeyboardBrightness.Dock = DockStyle.Top;
+            sliderKeyboardBrightness.Location = new Point(20, 112);
+            sliderKeyboardBrightness.Margin = new Padding(8, 4, 8, 4);
+            sliderKeyboardBrightness.Max = 3;
+            sliderKeyboardBrightness.Min = 0;
+            sliderKeyboardBrightness.Name = "sliderKeyboardBrightness";
+            sliderKeyboardBrightness.Size = new Size(787, 40);
+            sliderKeyboardBrightness.Step = 1;
+            sliderKeyboardBrightness.TabIndex = 45;
+            sliderKeyboardBrightness.Value = 3;
             // 
             buttonKeyboard.Activated = false;
             buttonKeyboard.AutoSizeMode = AutoSizeMode.GrowAndShrink;
@@ -2183,6 +2196,7 @@ namespace GHelper
         private RComboBox comboMatrix;
         private TableLayoutPanel tableLayoutKeyboard;
         private RComboBox comboKeyboard;
+        private Slider sliderKeyboardBrightness;
         private RButton button120Hz;
         private RButton buttonOptimized;
         private Label labelTipGPU;

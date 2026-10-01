@@ -313,6 +313,15 @@ namespace GHelper.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Custom Keys.
+        /// </summary>
+        internal static string AuraCustomKeys {
+            get {
+                return ResourceManager.GetString("AuraCustomKeys", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Counterclockwise.
         /// </summary>
         internal static string AuraCounterClockwise {
@@ -1364,6 +1373,78 @@ namespace GHelper.Properties {
         internal static string KeyBindings {
             get {
                 return ResourceManager.GetString("KeyBindings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Apply.
+        /// </summary>
+        internal static string KeyCustomApply {
+            get {
+                return ResourceManager.GetString("KeyCustomApply", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Fill All.
+        /// </summary>
+        internal static string KeyCustomFillAll {
+            get {
+                return ResourceManager.GetString("KeyCustomFillAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Fill Row.
+        /// </summary>
+        internal static string KeyCustomFillRow {
+            get {
+                return ResourceManager.GetString("KeyCustomFillRow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gradient.
+        /// </summary>
+        internal static string KeyCustomGradient {
+            get {
+                return ResourceManager.GetString("KeyCustomGradient", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Color Mapping.
+        /// </summary>
+        internal static string KeyCustomMapping {
+            get {
+                return ResourceManager.GetString("KeyCustomMapping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset.
+        /// </summary>
+        internal static string KeyCustomReset {
+            get {
+                return ResourceManager.GetString("KeyCustomReset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Custom Key Colors.
+        /// </summary>
+        internal static string KeyCustomTitle {
+            get {
+                return ResourceManager.GetString("KeyCustomTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Test Mapping.
+        /// </summary>
+        internal static string KeyCustomTest {
+            get {
+                return ResourceManager.GetString("KeyCustomTest", resourceCulture);
             }
         }
         
